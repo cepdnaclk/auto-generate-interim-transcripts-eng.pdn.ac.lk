@@ -34,7 +34,7 @@ or
 python gen_transcript.py --compile
 ```
 
-* This template was originally created for the convinience of obtaining interim transcripts by [@samurdhilbk](https://github.com/samurdhilbk).
+* The [latex template](https://github.com/cepdnaclk/eng.pdn.ac.lk-unofficial-interim-transcript-template) used in this tool was originally created for the convinience of obtaining interim transcripts by [@samurdhilbk](https://github.com/samurdhilbk).
 
 * You **must** get the interim transcript approved with the signature and seal of the head of the department.
 
