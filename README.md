@@ -12,6 +12,11 @@ pip install pera-transcript
 
   The tool provides three ways of specifying metadata in order to generate the latex file. Choose any of the following methods that you find convenient.
 
+  - Specify metadata as a set of command-line arguments:
+    ```bash
+    autogen_transcript --user "E/XX/YYY" --passwd "password" --DOB "DD Month YYYY" --dept_head "Prof. John A. Doe"
+    ```
+
   - Using a "metadata.yml" file: Create a "metadata.yml" file with your registeration number, course registeration portal password, your date of birth, and the name of your head of department as following:
 
     ```yaml
@@ -37,11 +42,6 @@ pip install pera-transcript
     If using Linux,
     ```bash
     autogen_transcript --meta_cfg '{"user": "E/XX/YYY", "passwd": "password", "DOB": "DD Month YYYY", "dept_head": "Prof. John A. Doe"}'
-    ```
-
-  - Specify metadata as a set of command-line arguments:
-    ```bash
-    autogen_transcript --user "E/XX/YYY" --passwd "password" --DOB "DD Month YYYY" --dept_head "Prof. John A. Doe"
     ```
 
 2. Generate both latex and pdf files:
