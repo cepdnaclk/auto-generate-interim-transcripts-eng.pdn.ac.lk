@@ -1,6 +1,7 @@
 import re
 import os
 import math
+import json
 import yaml
 import argparse
 import requests
@@ -11,20 +12,41 @@ login_url = 'https://engold.pdn.ac.lk/coursereg/dcf/login.php'
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('meta_path', help='Path to the yml metadata file.')
-    parser.add_argument('-c', '--compile', action='store_true', help='Compile the generated latex file to pdf.')
+    parser.add_argument('--compile', action='store_true', help='Compile the generated latex file to pdf.')
+    
+    group_1 = parser.add_argument_group('Specify the metadata as a path to the yml file')
+    group_1.add_argument('--meta_path', help='Path to the yml metadata file.')
+    group_2 = parser.add_argument_group('Specify the metadata as a dictionary')
+    group_2.add_argument('--meta_cfg', help='Metadata dictionary.', type=json.loads)
+    group_3 = parser.add_argument_group('Specify metadata as command-line arguments')
+    group_3.add_argument('--user', help='Your registeration number in the E/XX/YYY format.')
+    group_3.add_argument('--passwd', help='Your password for the course registeration / degree claim account.')
+    group_3.add_argument('--DOB', help='Your date of birth in the DD Month YYYY format.')
+    group_3.add_argument('--dept_head', help='The name of your head of department.')
     
     args = parser.parse_args()
     
-    try:
-        with open(args.meta_path, "r") as file:
-            metadata = yaml.safe_load(file)
-    except FileNotFoundError:
-        print(f"The file '{args.meta_path}' was not found.")
-        exit(0)
-    except yaml.YAMLError as e:
-        print(f"Error reading the YAML file: {e}")
-        exit(0)
+    if not any([args.meta_path, args.meta_cfg]) and not any([args.user, args.passwd, args.DOB, args.dept_head]):
+        parser.error("You must provide all the required arguments from at least one group. See --help for more information.")
+    elif args.meta_path:
+        try:
+            with open(args.meta_path, "r") as file:
+                metadata = yaml.safe_load(file)
+        except FileNotFoundError:
+            print(f"The file '{args.meta_path}' was not found.")
+            exit(0)
+        except yaml.YAMLError as e:
+            print(f"Error reading the YAML file: {e}")
+            exit(0)
+    elif args.meta_cfg:
+        metadata = args.meta_cfg
+    elif all([args.user, args.passwd, args.DOB, args.dept_head]):
+        metadata = {
+            'user': args.user,
+            'passwd': args.passwd,
+            'DOB': args.DOB,
+            'dept_head': args.dept_head
+        }
 
     login_data = {
         'un': metadata['user'],
@@ -40,13 +62,16 @@ def main():
         response2 = requests.get('https://engold.pdn.ac.lk/coursereg/dcf/viewgradereport22.php', headers={'Cookie': f"PHPSESSID={response.cookies.get('PHPSESSID')}"})
         if response2.status_code == 200:
             soup = BeautifulSoup(response2.text, 'html.parser')
+            field = soup.find(text=re.compile('Field :')).next_element.text.strip()
             e_number = soup.find_all(text=re.compile('Grade Report - '))[0].split(' - ')[1]
             gpa_value = math.ceil(float(soup.find_all(text=re.compile('Final Course GPA ='))[0].split('Final Course GPA =')[1].strip()) * 20) / 20
             full_name = ' '.join(soup.find_all('p')[5].text.split()[-3:])
             dob = metadata['DOB']
+            dept_head = metadata['dept_head']
             gp_table = [[cell.text.replace('!', 'I') for cell in row.find_all('option')] for row in soup.find('table', border='1', align='center').find_all('tr')[1:][0].find_all('td')]
             gp_table = '\\\\\n\\hline\n'.join([' & '.join([str(round(float(row[i].replace('&', '\\&')), 2)) if row[i].replace('&', '\\&').replace('.', '').isnumeric() else row[i].replace('&', '\\&') for row in gp_table]) for i in range(len(gp_table[0]))]) + '\\\\\n\\hline'
             te_credits, ge_credits = [[int(s) for s in re.findall(r'\d+', s.replace('\xa0', ''))] for s in soup.find_all(text=re.compile('Credits Offered = '))]
+            te_deficit, ge_deficit = [re.findall(r'\d+', s.replace('\xa0', '').replace('.', ''))[-1] for s in soup.find_all(text=re.compile('Credit Deficit'))[1:3]]
             te_table = [[cell.text.replace('!', 'I') for cell in row.find_all('option')] for row in soup.find_all('table', border='1', align='center')[1].find_all('tr')[1:][0].find_all('td')]
             te_table = '\\\\\n\\hline\n'.join([' & '.join([str(round(float(row[i].replace('&', '\\&')), 2)) if row[i].replace('&', '\\&').replace('.', '').isnumeric() else row[i].replace('&', '\\&') for row in te_table]) for i in range(len(te_table[0]))]) + '\\\\\n\\hline'
             ge_table = [[cell.text.replace('!', 'I') for cell in row.find_all('option')] for row in soup.find_all('table', border='1', align='center')[2].find_all('tr')[1:][0].find_all('td')]
@@ -138,7 +163,7 @@ def main():
 
 % \\begin{{table}}[H]
 % \\begin{{tabularx}}{{\\textwidth}}{{Xl}}
-\\textbf{{Field of Specialization}} & Computer Engineering \\\\
+\\textbf{{Field of Specialization}} & {field} \\\\
 \\textbf{{Degree}} & Bachelor of the Science of Engineering \\\\
 \\textbf{{Medium of Instruction}} & English \\\\
 \\textbf{{Current GPA}} & {gpa_value:.2f} \\\\
@@ -178,7 +203,7 @@ A student who advances to follow the Specialization Programme in Engineering has
 \\hline 
 \\textbf{{Credits Offered}} & {te_credits[0]} \\\\ \\hline 
 \\textbf{{Credits Earned from Core and Technical Elective courses to claim the Degree}} & {te_credits[1]} \\\\ \\hline 
-\\textbf{{Credit Deficit from Core and Technical Elective courses}} & {te_credits[0] - te_credits[1]} \\\\
+\\textbf{{Credit Deficit from Core and Technical Elective courses}} & {te_deficit} \\\\
 \\hline 
 \\textbf{{GPA}} & {gpa_value:.2f} \\\\
 \\hline 
@@ -208,7 +233,7 @@ A student who advances to follow the Specialization Programme in Engineering has
 \\hline 
 \\textbf{{Credits Offered}} & {ge_credits[0]} \\\\ \\hline 
 \\textbf{{Credits Earned from General Elective courses to claim the Degree}} & {ge_credits[1]} \\\\ \\hline 
-\\textbf{{Credit Deficit from General Elective courses}} & {ge_credits[0] - ge_credits[1]} \\\\
+\\textbf{{Credit Deficit from General Elective courses}} & {ge_deficit} \\\\
 \\hline 
 \\end{{tabularx}}
 
@@ -300,10 +325,10 @@ This is an interim academic transcript issued at the request of the student, cov
 \\noindent
 \\begin{{minipage}}[t]{{0.5\\linewidth}}
     \\raggedright
-    \\sign{{Prof. Roshan G. Ragel}}
+    \\sign{{{dept_head}}}
     \\par
     Head of Department\\par
-    Department of Computer Engineering, \\par
+    Department of {field}, \\par
     Faculty of Engineering, \\par
     University of Peradeniya, Sri Lanka
 \\end{{minipage}}%
@@ -344,15 +369,18 @@ This is an interim academic transcript issued at the request of the student, cov
 
 \\end{{document}}        
 """
-        with open('transcript.tex', 'w') as f:
+        e_number = e_number.replace('/', '')
+
+        with open(f'{e_number}_transcript.tex', 'w') as f:
             f.write(latex_doc)
             
         if args.compile:
-            proc = subprocess.Popen(['pdflatex', 'transcript.tex'])
+            proc = subprocess.Popen(['pdflatex', f'{e_number}_transcript.tex'])
             proc.communicate()
-            os.unlink('transcript.log')
-            os.unlink('transcript.aux')
-            os.unlink('transcript.out')
+            
+            os.unlink(f'{e_number}_transcript.log')
+            os.unlink(f'{e_number}_transcript.aux')
+            os.unlink(f'{e_number}_transcript.out')
 
 if __name__ == '__main__':
     main()
