@@ -52,6 +52,8 @@ pip install pera-transcript
 
 * The [latex template](https://github.com/cepdnaclk/eng.pdn.ac.lk-unofficial-interim-transcript-template) used in this tool was originally created for the convinience of obtaining interim transcripts by [@samurdhilbk](https://github.com/samurdhilbk).
 
+* Overleaf link to the latex template: https://www.overleaf.com/read/cyjpryyxnthy
+
 * You **must** get the interim transcript approved with the signature and seal of the head of the department.
 
 * **Frequently Asked Questions**
