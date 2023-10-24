@@ -6,35 +6,53 @@
 pip install pera-transcript
 ```
 
-## Preparing metadata
-
-Create a "metadata.yml" file with your registeration number, course registeration portal password, your date of birth, and the name of your head of department as following:
-
-```yaml
-user: E/XX/YYY # Your registeration number
-passwd: xxxxxx # Your password for the course registeration / degree claim account
-DOB: DD Month YYYY # Your date of birth
-dept_head: Prof. John A. Doe # The name of your head of department
-```
-
 ## Using the tool
 
 1. Generate the latex file: 
-```bash 
-python gen_transcript.py
-```
 
-2. Generate both latex and pdf files: 
-```bash 
-python gen_transcript.py -c
-``` 
-or 
+  The tool provides three ways of specifying metadata in order to generate the latex file. Choose any of the following methods that you find convenient.
 
-```bash 
-python gen_transcript.py --compile
-```
+  - Specify metadata as a set of command-line arguments:
+    ```bash
+    autogen_transcript --user "E/XX/YYY" --passwd "password" --DOB "DD Month YYYY" --dept_head "Prof. John A. Doe"
+    ```
+
+  - Using a "metadata.yml" file: Create a "metadata.yml" file with your registeration number, course registeration portal password, your date of birth, and the name of your head of department as following:
+
+    ```yaml
+    user: E/XX/YYY # Your registeration number
+    passwd: xxxxxx # Your password for the course registeration / degree claim account
+    DOB: DD Month YYYY # Your date of birth
+    dept_head: Prof. John A. Doe # The name of your head of department
+    ```
+
+    Then, run the tool as follows:
+
+    ```bash 
+    autogen_transcript --meta_path="/path/to/metadata.yml"
+    ```
+
+  - Specify the metadata as a JSON formatted string in the command-line argument:
+
+    If using Windows,
+    ```bash
+    autogen_transcript --meta_cfg "{\"user\": \"E/XX/YYY\", \"passwd\": \"password\", \"DOB\": \"DD Month YYYY\", \"dept_head\": \"Prof. John A. Doe\"}"
+    ```
+
+    If using Linux,
+    ```bash
+    autogen_transcript --meta_cfg '{"user": "E/XX/YYY", "passwd": "password", "DOB": "DD Month YYYY", "dept_head": "Prof. John A. Doe"}'
+    ```
+
+2. Generate both latex and pdf files:
+
+  ```bash 
+  autogen_transcript --compile (--meta_path META_PATH | --meta_cfg META_CFG | --user USER --passwd PASSWD --DOB DOB --dept_head DEPT_HEAD)
+  ```
 
 * The [latex template](https://github.com/cepdnaclk/eng.pdn.ac.lk-unofficial-interim-transcript-template) used in this tool was originally created for the convinience of obtaining interim transcripts by [@samurdhilbk](https://github.com/samurdhilbk).
+
+* Overleaf link to the latex template: https://www.overleaf.com/read/cyjpryyxnthy
 
 * You **must** get the interim transcript approved with the signature and seal of the head of the department.
 
